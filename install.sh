@@ -747,19 +747,40 @@ domain_check() {
 	# test_domain=$(dig $domain +short)
 	# test_domain=$(ping $domain -c 1 -4 | grep -oE -m1 "([0-9]{1,3}\.){3}[0-9]{1,3}")
 	# test_domain=$(wget -qO- --header='accept: application/dns-json' "https://cloudflare-dns.com/dns-query?name=$domain&type=A" | grep -oE "([0-9]{1,3}\.){3}[0-9]{1,3}" | head -1)
-	test_domain=$(curl -sH 'accept: application/dns-json' "https://cloudflare-dns.com/dns-query?name=$domain&type=A" | grep -oE "([0-9]{1,3}\.){3}[0-9]{1,3}" | head -1)
-	if [[ $test_domain != $ip ]]; then
-		echo
-		echo -e "$red 检测域名解析错误....$none"
-		echo
-		echo -e " 你的域名: $yellow$domain$none 未解析到: $cyan$ip$none"
-		echo
-		echo -e " 你的域名当前解析到: $cyan$test_domain$none"
-		echo
-		echo "备注...如果你的域名是使用 Cloudflare 解析的话..在 Status 那里点一下那图标..让它变灰"
-		echo
-		exit 1
-	fi
+	while :; do
+		test_domain=$(curl -sH 'accept: application/dns-json' "https://cloudflare-dns.com/dns-query?name=$domain&type=A" | grep -oE "([0-9]{1,3}\.){3}[0-9]{1,3}" | head -1)
+		if [[ $test_domain != $ip ]]; then
+			HasNsLookup=$(whereis nslookup)
+			NslookupPath=$(echo $HasNsLookup | grep -o ":$")
+			# 能够找到相关指令
+			if [[ "$NslookupPath" != ":" ]]; then
+				answer=$(echo $(nslookup $domain 8.8.8.8) | grep -Po "answer:.*")
+				dnsip=$(echo $answer | grep -Po "$ip")
+				if [[ "$ip" == "$dnsip" ]]; then
+					break
+				fi
+			fi
+			echo
+			echo -e "$red 检测域名解析错误....$none"
+			echo
+			echo -e " 你的域名: $yellow$domain$none 未解析到: $cyan$ip$none"
+			echo
+			echo -e " 你的域名当前解析到: $cyan$test_domain$none"
+			echo
+			echo "备注...如果你的域名是使用 Cloudflare 解析的话..在 Status 那里点一下那图标..让它变灰"
+			echo
+			echo "如果你确定已经正确解析了域名,请继续操作...否则,请等待DNS刷新,或是重新设置DNS解析"
+			read -p "$(echo -e "(是否确定已经正确解析: [${magenta}Y$none]):") " record
+
+			if [[ "$record" == [Yy] ]]; then
+				break
+			else
+				exit 1
+			fi
+		else
+			break
+		fi
+	done
 }
 
 install_caddy() {
