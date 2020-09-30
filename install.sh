@@ -994,7 +994,7 @@ get_ip() {
 
 error() {
 
-	echo -e "\n$red 输入错误！$none\n"
+	echo -e "\n$red 大佬输入的是啥!? 脚本它不认识哇$none\n"
 
 }
 
@@ -1120,10 +1120,25 @@ while :; do
 	echo
 	echo "搭建教程: https://233v2.com/post/2/"
 	echo
-	echo " 1. 安装"
-	echo
-	echo " 2. 卸载"
-	echo
+	if [[ -f /usr/bin/v2ray/v2ray && -f /etc/v2ray/config.json ]] && [[ -f $backup && -d /etc/v2ray/233boy/v2ray ]] || [[ -f /usr/bin/v2ray/v2ray && -f /etc/v2ray/config.json ]] && [[ -f /etc/v2ray/233blog_v2ray_backup.txt && -d /etc/v2ray/233boy/v2ray ]]; then
+		Installed=OK
+		echo
+		echo "1. 管理/配置"
+		echo
+		echo "2. 卸载"
+		echo
+		echo -e " $yellow输入 ${cyan}v2ray${none} $yellow即可管理 V2Ray${none}"
+		echo
+		echo -e " $yellow输入 ${cyan}v2ray uninstall${none} $yellow即可卸载${none}"
+		echo
+	else
+		Installed=NONE
+		echo " 1. 安装"
+		echo
+		echo " 2. 卸载"
+		echo
+	fi
+	
 	if [[ $local_install ]]; then
 		echo -e "$yellow 温馨提示.. 本地安装已启用 ..$none"
 		echo
@@ -1131,7 +1146,11 @@ while :; do
 	read -p "$(echo -e "请选择 [${magenta}1-2$none]:")" choose
 	case $choose in
 	1)
-		install
+		if [[ "$Installed" == "OK" ]]; then
+			v2ray
+		else
+			install
+		fi
 		break
 		;;
 	2)
